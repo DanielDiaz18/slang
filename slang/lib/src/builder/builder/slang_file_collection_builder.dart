@@ -60,7 +60,7 @@ class SlangFileCollectionBuilder {
     return fromFileModel(
       config: config,
       files:
-          files.where((f) => RegExp.escape(config.inputFilePattern).hasMatch(f.path)).map((f) {
+          files.where((f) => f.path.endsWith(config.inputFilePattern)).map((f) {
         return PlainTranslationFile(
           path: f.path.replaceAll('\\', '/').replaceAll(currentDirectory, ''),
           read: () async => f.readAsStringSync(),

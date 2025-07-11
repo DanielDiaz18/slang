@@ -15,11 +15,12 @@ final _setEquality = SetEquality();
 Future<void> migrateArbRunner({
   required String sourcePath,
   required String destinationPath,
+  bool noTransformKeys = false,
 }) async {
   print('Migrating ARB to JSON...');
 
   final source = await File(sourcePath).readAsString();
-  final resultMap = migrateArb(source);
+  final resultMap = migrateArb(source, noTransformKeys: noTransformKeys);
 
   FileUtils.createMissingFolders(filePath: destinationPath);
   FileUtils.writeFile(
@@ -34,7 +35,8 @@ Future<void> migrateArbRunner({
   print('File generated: $destinationPath');
 }
 
-Map<String, dynamic> migrateArb(String raw, [bool verbose = true]) {
+Map<String, dynamic> migrateArb(String raw,
+    {bool verbose = true, bool noTransformKeys = false}) {
   final sourceMap = json.decode(raw);
   final resultMap = <String, dynamic>{};
 
@@ -61,21 +63,26 @@ Map<String, dynamic> migrateArb(String raw, [bool verbose = true]) {
     }
 
     final keyParts = <String>[];
-    key.getWords().forEach((part) {
-      final subPathInt = int.tryParse(part);
-      if (subPathInt == null) {
-        // add normal key part
-        keyParts.add(part.toLowerCase());
-      } else {
-        // this key part is a number
-        if (keyParts.isEmpty) {
-          throw 'Keys cannot start with a number: $key';
-        }
 
-        // add number to last part as suffix
-        keyParts[keyParts.length - 1] = '${keyParts.last}$subPathInt';
-      }
-    });
+    if (noTransformKeys) {
+      keyParts.add(key);
+    } else {
+      key.getWords().forEach((part) {
+        final subPathInt = int.tryParse(part);
+        if (subPathInt == null) {
+          // add normal key part
+          keyParts.add(part.toLowerCase());
+        } else {
+          // this key part is a number
+          if (keyParts.isEmpty) {
+            throw 'Keys cannot start with a number: $key';
+          }
+
+          // add number to last part as suffix
+          keyParts[keyParts.length - 1] = '${keyParts.last}$subPathInt';
+        }
+      });
+    }
 
     if (isMeta) {
       _digestMeta(
@@ -148,7 +155,8 @@ List<_DetectedContext> _digestEntry(
       final variable = singleComplexMatch.group(1)!.trim();
       final type = singleComplexMatch.group(2)!.trim();
       final content = singleComplexMatch.group(3)!;
-      final enumValues = type == 'select' ? <String>{} : null;
+      final isSelect = type == 'select';
+      final enumValues = isSelect ? <String>{} : null;
       final isPlural = type == 'plural';
       for (final part in RegexUtils.arbComplexNodeContent.allMatches(content)) {
         final partName =

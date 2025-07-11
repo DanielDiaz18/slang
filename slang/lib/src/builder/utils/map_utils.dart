@@ -85,7 +85,7 @@ class MapUtils {
 
     for (int i = 0; i < pathList.length; i++) {
       final subPath = pathList[i];
-      final subPathInt = int.tryParse(subPath);
+      final subPathInt = null;
 
       final nextSubPath = i + 1 < pathList.length ? pathList[i + 1] : null;
       final nextIsList =
@@ -109,7 +109,7 @@ class MapUtils {
           }
         } else {
           if (curr is! Map) {
-            throw 'The leaf "$destinationPath" cannot be added because the parent of "$subPath" is not a map.';
+            throw 'The leaf "$destinationPath" cannot be added because the parent of "$subPath" is not a map.  ${curr.runtimeType}';
           }
           curr[subPath] = item;
         }
@@ -136,14 +136,15 @@ class MapUtils {
         } else {
           // map mode
           if (curr is! Map) {
-            throw 'The leaf "$destinationPath" cannot be added because the parent of "$subPath" is not a map.';
+            throw 'The leaf "$destinationPath" cannot be added because the parent of "$subPath" is not a map. ${curr.runtimeType}';
           }
 
           if (!curr.containsKey(subPath)) {
             // path touches first time the tree, make sure the path exists
             // but do not overwrite,
             // so previous [addStringToMap] calls get not lost
-            curr[subPath] = nextIsList ? <dynamic>[] : <String, dynamic>{};
+            // curr[subPath] = nextIsList ? <dynamic>[] : <String, dynamic>{};
+            curr[subPath] = <String, dynamic>{};
           }
 
           curr = curr[subPath];
