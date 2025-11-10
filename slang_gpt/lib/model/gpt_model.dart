@@ -28,6 +28,10 @@ enum GptModel {
       defaultInputLength: 128000,
       costPer1kInputToken: 0.00015,
       costPer1kOutputToken: 0.0006),
+  gpt5('gpt-5', GptProvider.openai,
+      defaultInputLength: 128000,
+      costPer1kInputToken: 0,
+      costPer1kOutputToken: 0),
   ;
 
   const GptModel(
