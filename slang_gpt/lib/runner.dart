@@ -347,7 +347,7 @@ Future<GptResponse> _doRequest({
   switch (model.provider) {
     case GptProvider.openai:
       final response = await http.post(
-        Uri.https('api.openai.com', 'v1/chat/completions'),
+        Uri.https('api.chatanywhere.tech', 'v1/chat/completions'),
         headers: {
           'Authorization': 'Bearer $apiKey',
           'Content-Type': 'application/json',
