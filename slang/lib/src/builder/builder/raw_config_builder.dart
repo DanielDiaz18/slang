@@ -1,3 +1,4 @@
+import 'package:slang/src/builder/model/autodoc_config.dart';
 import 'package:slang/src/builder/model/context_type.dart';
 import 'package:slang/src/builder/model/enums.dart';
 import 'package:slang/src/builder/model/format_config.dart';
@@ -9,6 +10,7 @@ import 'package:slang/src/builder/model/sanitization_config.dart';
 import 'package:slang/src/builder/utils/map_utils.dart';
 import 'package:slang/src/builder/utils/regex_utils.dart';
 import 'package:slang/src/builder/utils/string_extensions.dart';
+import 'package:slang/src/utils/log.dart' as log;
 import 'package:yaml/yaml.dart';
 
 class RawConfigBuilder {
@@ -50,19 +52,20 @@ class RawConfigBuilder {
   /// Parses the config entry
   static RawConfig fromMap(Map<String, dynamic> map) {
     if (map['output_format'] != null) {
-      print(
+      log.error(
         'The "output_format" key is no longer supported since slang v4. Always generates multiple files now.',
       );
     }
 
+    final baseLocale = I18nLocale.fromString(
+        map['base_locale'] ?? RawConfig.defaultBaseLocale);
     final keyCase =
         (map['key_case'] as String?)?.toCaseStyle() ?? RawConfig.defaultKeyCase;
 
     final generateEnum = map['generate_enum'] ?? RawConfig.defaultGenerateEnum;
 
     return RawConfig(
-      baseLocale: I18nLocale.fromString(
-          map['base_locale'] ?? RawConfig.defaultBaseLocale),
+      baseLocale: baseLocale,
       fallbackStrategy:
           (map['fallback_strategy'] as String?)?.toFallbackStrategy() ??
               RawConfig.defaultFallbackStrategy,
@@ -130,6 +133,9 @@ class RawConfigBuilder {
           RawConfig.defaultObfuscationConfig,
       format: (map['format'] as Map<String, dynamic>?)?.toFormatConfig() ??
           RawConfig.defaultFormatConfig,
+      autodoc: (map['autodoc'] as Map<String, dynamic>?)
+              ?.toDocumentationConfig(baseLocale: baseLocale.languageTag) ??
+          RawConfig.defaultAutodocConfig,
       imports: map['imports']?.cast<String>() ?? RawConfig.defaultImports,
       generateEnum: generateEnum,
       rawMap: map,
@@ -147,7 +153,7 @@ extension on Map<String, dynamic> {
       return ContextType(
         enumName: enumName,
         defaultParameter:
-            config['default_parameter'] ?? ContextType.DEFAULT_PARAMETER,
+            config['default_parameter'] ?? ContextType.defaultParameterSlang,
         generateEnum: config['generate_enum'] ?? defaultGenerateEnum,
       );
     }).toList();
@@ -241,6 +247,18 @@ extension on Map<String, dynamic> {
     return FormatConfig(
       enabled: this['enabled'],
       width: this['width'],
+    );
+  }
+
+  /// Parses the 'documentation' config
+  AutodocConfig toDocumentationConfig({required String baseLocale}) {
+    final locales = (this['locales'] as List?)?.cast<String>() ??
+        AutodocConfig.defaultLocales;
+    return AutodocConfig(
+      enabled: this['enabled'] ?? AutodocConfig.defaultEnabled,
+      locales: locales
+          .map((locale) => I18nLocale.fromString(locale).languageTag)
+          .toList(),
     );
   }
 

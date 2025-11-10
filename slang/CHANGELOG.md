@@ -1,3 +1,28 @@
+## 4.9.2
+
+- fix: split flat map into multiple switch blocks instead of a HashMap which caused StackOverflow on linked translations (#319)
+
+## 4.9.1
+
+- fix: generate the flat map as a HashMap instead of a switch. Dart AOT compiler is unable to compile large switch statements (#318)
+
+## 4.9.0
+
+- feat: combine namespaced and non-namespaced translations (#311)
+- feat: reduce CLI logging (#315)
+
+## 4.8.1
+
+- fix: remove new line in autodoc output
+
+## 4.8.0
+
+- feat: add `autodoc` feature enabled by default that generates the base translation as documentation for the translation keys (#218)
+- feat: `slang analyze` supports `--source-dirs` (#309) @khoadng
+- feat: `slang configure` supports `--source-dirs` (#308) @khoadng
+- fix: correctly preserve identation of YAML output (#299) @adil192
+- deps: loosen `build` constraint in `slang_build_runner` (#314)
+
 ## 4.7.3
 
 - fix: add `override` to reserved keywords so it will be sanitized as well (#303)

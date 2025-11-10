@@ -9,6 +9,7 @@ import 'package:slang/src/builder/model/raw_config.dart';
 import 'package:slang/src/builder/model/slang_file_collection.dart';
 import 'package:slang/src/builder/utils/path_utils.dart';
 import 'package:slang/src/builder/utils/regex_utils.dart';
+import 'package:slang/src/utils/log.dart' as log;
 
 class SlangFileCollectionBuilder {
   static SlangFileCollection readFromFileSystem({
@@ -112,7 +113,7 @@ class SlangFileCollectionBuilder {
                 return TranslationFile(
                   path: f.path,
                   locale: locale,
-                  namespace: TranslationFile.DEFAULT_NAMESPACE,
+                  namespace: RegexUtils.defaultNamespace,
                   read: f.read,
                 );
               }
@@ -157,7 +158,7 @@ class SlangFileCollectionBuilder {
                 locale: directoryLocale ?? config.baseLocale,
                 namespace: config.namespaces
                     ? fileNameNoExtension
-                    : TranslationFile.DEFAULT_NAMESPACE,
+                    : RegexUtils.defaultNamespace,
                 read: f.read,
               );
             }
@@ -184,9 +185,8 @@ class SlangFileCollectionBuilder {
               return TranslationFile(
                 path: f.path,
                 locale: locale,
-                namespace: config.namespaces
-                    ? namespace
-                    : TranslationFile.DEFAULT_NAMESPACE,
+                namespace:
+                    config.namespaces ? namespace : RegexUtils.defaultNamespace,
                 read: f.read,
               );
             }
@@ -212,7 +212,7 @@ RawConfig readConfigFromFileSystem({
       config = RawConfigBuilder.fromYaml(content, true);
       if (config != null) {
         if (verbose) {
-          print('Found slang.yaml!');
+          log.verbose('Found slang.yaml!');
         }
         break;
       }
@@ -223,7 +223,7 @@ RawConfig readConfigFromFileSystem({
       config = RawConfigBuilder.fromYaml(content);
       if (config != null) {
         if (verbose) {
-          print('Found build.yaml!');
+          log.verbose('Found build.yaml!');
         }
         break;
       }
@@ -234,15 +234,15 @@ RawConfig readConfigFromFileSystem({
   if (config == null) {
     config = RawConfigBuilder.fromMap({});
     if (verbose) {
-      print('No build.yaml or slang.yaml, using default settings.');
+      log.verbose('No build.yaml or slang.yaml, using default settings.');
     }
   }
 
   // show build config
   if (verbose && !useDefaultConfig) {
-    print('');
+    log.verbose('');
     config.printConfig();
-    print('');
+    log.verbose('');
   }
 
   config.validate();
@@ -300,7 +300,7 @@ void _namespaceDeprecationWarning({
   required String fileName,
   required String replacement,
 }) {
-  print(
+  log.error(
     'DEPRECATED(v4.3.0): Do not use namespaces in file names when namespaces are disabled: "$fileName" -> "$replacement"',
   );
 }
@@ -309,7 +309,7 @@ void _baseLocaleDeprecationWarning({
   required String fileName,
   required String replacement,
 }) {
-  print(
+  log.error(
     'DEPRECATED(v4.3.0): Always specify locale: "$fileName" -> "$replacement"',
   );
 }

@@ -2,6 +2,7 @@ import 'package:slang/src/builder/model/context_type.dart';
 import 'package:slang/src/builder/model/i18n_locale.dart';
 import 'package:slang/src/builder/model/interface.dart';
 import 'package:slang/src/builder/model/node.dart';
+import 'package:slang/src/builder/utils/regex_utils.dart';
 
 typedef I18nDataComparator = int Function(I18nData a, I18nData b);
 
@@ -33,4 +34,50 @@ class I18nData {
       return -1; // move base to the left
     }
   };
+
+  /// Gets the node for a given path
+  Node? getNodeByPath(String path) {
+    final parts = path.split('.');
+    Node? current = root;
+
+    for (final part in parts) {
+      if (current is ObjectNode) {
+        current = current.entries[part];
+      } else {
+        return null;
+      }
+    }
+
+    return current;
+  }
+
+  String? getAutodoc(String path, LeafNode? node) {
+    final foundNode = node ?? getNodeByPath(path) as LeafNode?;
+    if (foundNode == null) {
+      return null;
+    }
+
+    return switch (foundNode) {
+      TextNode textNode => '${textNode.raw.digest(this)}',
+      PluralNode pluralNode => pluralNode.quantities.entries
+          .map((e) => '(${e.key.name}) {${e.value.raw.digest(this)}}')
+          .join(' '),
+      ContextNode contextNode => contextNode.entries.entries
+          .map((e) => '(${e.key}) {${e.value.raw.digest(this)}}')
+          .join(' '),
+      _ =>
+        throw 'Unsupported node type for documentation: ${foundNode.runtimeType}',
+    };
+  }
+}
+
+final _whitespaceRegex = RegExp(r'\s+');
+
+extension on String {
+  String? digest(I18nData data) {
+    return replaceAllMapped(RegexUtils.linkedRegex, (match) {
+      final linkedPath = (match.group(1) ?? match.group(2))!;
+      return data.getAutodoc(linkedPath, null) ?? match.group(0)!;
+    }).replaceAll(_whitespaceRegex, ' ');
+  }
 }

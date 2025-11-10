@@ -4,24 +4,27 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:slang/src/builder/model/i18n_locale.dart';
 import 'package:slang/src/builder/model/slang_file_collection.dart';
+import 'package:slang/src/utils/log.dart' as log;
 
-void runConfigure(SlangFileCollection fileCollection) {
+void runConfigure(
+  SlangFileCollection fileCollection, {
+  List<String>? arguments,
+}) {
   final locales = getLocales(fileCollection);
+  final sourceDirs = parseSourceDirs(arguments);
+  final plistPaths = getPlistPaths(sourceDirs);
 
-  for (final path in const [
-    'ios/Runner/Info.plist',
-    'macos/Runner/Info.plist',
-  ]) {
+  for (final path in plistPaths) {
     final file = File(path);
     if (!file.existsSync()) {
-      print('File not found: $path');
+      log.error('File not found: $path');
       continue;
     }
 
     final updated =
         updatePlist(locales: locales, content: file.readAsStringSync());
     file.writeAsStringSync(updated);
-    print('Updated: $path');
+    log.info('Updated: $path');
   }
 }
 
@@ -74,4 +77,25 @@ Set<I18nLocale> getLocales(SlangFileCollection fileCollection) {
   }
   locales.sort((a, b) => a.languageTag.compareTo(b.languageTag));
   return locales.toSet();
+}
+
+List<String> parseSourceDirs(List<String>? arguments) {
+  if (arguments == null) return ['.'];
+  for (final a in arguments) {
+    if (a.startsWith('--source-dirs=')) {
+      return a.substring(14).split(',').map((s) => s.trim()).toList();
+    }
+  }
+  return ['.'];
+}
+
+List<String> getPlistPaths(List<String> sourceDirs) {
+  final plistPaths = <String>[];
+  for (final sourceDir in sourceDirs) {
+    plistPaths.addAll([
+      '$sourceDir/ios/Runner/Info.plist',
+      '$sourceDir/macos/Runner/Info.plist',
+    ]);
+  }
+  return plistPaths;
 }

@@ -4,6 +4,7 @@ import 'package:slang/src/builder/model/enums.dart';
 import 'package:slang/src/builder/model/i18n_locale.dart';
 import 'package:slang/src/builder/model/slang_file_collection.dart';
 import 'package:slang/src/builder/model/translation_map.dart';
+import 'package:slang/src/utils/log.dart' as log;
 
 class TranslationMapBuilder {
   /// This method transforms files to an intermediate model [TranslationMap].
@@ -14,11 +15,10 @@ class TranslationMapBuilder {
   /// The resulting map is in a unmodified state, so no actual i18n handling (plural, rich text) has been applied.
   static Future<TranslationMap> build({
     required SlangFileCollection fileCollection,
-    required bool verbose,
   }) async {
     final rawConfig = fileCollection.config;
     final translationMap = TranslationMap();
-    final padLeft = verbose
+    final padLeft = log.level == log.Level.verbose
         ? _getPadLeft(
             files: fileCollection.files,
             baseLocale: rawConfig.baseLocale.languageTag,
@@ -33,9 +33,7 @@ class TranslationMapBuilder {
         translations =
             BaseDecoder.decodeWithFileType(rawConfig.fileType, content);
       } on FormatException catch (e) {
-        if (verbose) {
-          print('');
-        }
+        log.verbose('');
         throw 'File: ${file.path}\n$e';
       }
 
@@ -54,11 +52,11 @@ class TranslationMapBuilder {
             translations: localeTranslations,
           );
 
-          if (verbose) {
+          if (log.level == log.Level.verbose) {
             final baseStr = locale == rawConfig.baseLocale ? '(base) ' : '';
             final namespaceStr =
                 rawConfig.namespaces ? '(${file.namespace}) ' : '';
-            print(
+            log.verbose(
                 '${('$baseStr$namespaceStr${locale.languageTag}').padLeft(padLeft)} -> ${file.path}');
           }
         }
@@ -71,11 +69,11 @@ class TranslationMapBuilder {
           translations: translations,
         );
 
-        if (verbose) {
+        if (log.level == log.Level.verbose) {
           final baseLog = file.locale == rawConfig.baseLocale ? '(base) ' : '';
           final namespaceLog =
               rawConfig.namespaces ? '(${file.namespace}) ' : '';
-          print(
+          log.verbose(
               '${'$baseLog$namespaceLog${file.locale.languageTag}'.padLeft(padLeft)} -> ${file.path}');
         }
       }
@@ -84,9 +82,7 @@ class TranslationMapBuilder {
     if (translationMap
         .getLocales()
         .every((locale) => locale != rawConfig.baseLocale)) {
-      if (verbose) {
-        print('');
-      }
+      log.verbose('');
       throw 'Translation file for base locale "${rawConfig.baseLocale.languageTag}" not found.';
     }
 
@@ -94,7 +90,7 @@ class TranslationMapBuilder {
   }
 }
 
-const _BASE_STR_LENGTH = 7; // "(base) "
+const _baseStrLength = 7; // "(base) "
 
 /// Determines the longest debug string used for PadLeft
 int _getPadLeft({
@@ -112,7 +108,7 @@ int _getPadLeft({
     }
 
     if (file.locale.languageTag == baseLocale) {
-      currLength += _BASE_STR_LENGTH;
+      currLength += _baseStrLength;
     }
 
     if (currLength > longest) {

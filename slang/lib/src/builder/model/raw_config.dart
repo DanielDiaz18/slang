@@ -1,3 +1,4 @@
+import 'package:slang/src/builder/model/autodoc_config.dart';
 import 'package:slang/src/builder/model/context_type.dart';
 import 'package:slang/src/builder/model/enums.dart';
 import 'package:slang/src/builder/model/format_config.dart';
@@ -5,6 +6,7 @@ import 'package:slang/src/builder/model/i18n_locale.dart';
 import 'package:slang/src/builder/model/interface.dart';
 import 'package:slang/src/builder/model/obfuscation_config.dart';
 import 'package:slang/src/builder/model/sanitization_config.dart';
+import 'package:slang/src/utils/log.dart' as log;
 
 /// represents a build.yaml or a slang.yaml file
 class RawConfig {
@@ -50,6 +52,10 @@ class RawConfig {
     enabled: FormatConfig.defaultEnabled,
     width: FormatConfig.defaultWidth,
   );
+  static const AutodocConfig defaultAutodocConfig = AutodocConfig(
+    enabled: AutodocConfig.defaultEnabled,
+    locales: AutodocConfig.defaultLocales,
+  );
   static const List<String> defaultImports = <String>[];
   static const bool defaultGenerateEnum = true;
 
@@ -86,6 +92,7 @@ class RawConfig {
   final List<InterfaceConfig> interfaces;
   final ObfuscationConfig obfuscation;
   final FormatConfig format;
+  final AutodocConfig autodoc;
   final List<String> imports;
   final bool generateEnum;
 
@@ -125,6 +132,7 @@ class RawConfig {
     required this.interfaces,
     required this.obfuscation,
     required this.format,
+    required this.autodoc,
     required this.imports,
     required this.generateEnum,
     required this.rawMap,
@@ -159,6 +167,7 @@ class RawConfig {
     List<InterfaceConfig>? interfaces,
     ObfuscationConfig? obfuscation,
     FormatConfig? format,
+    AutodocConfig? autodoc,
     bool? generateEnum,
   }) {
     return RawConfig(
@@ -195,6 +204,7 @@ class RawConfig {
       interfaces: interfaces ?? this.interfaces,
       obfuscation: obfuscation ?? this.obfuscation,
       format: format ?? this.format,
+      autodoc: autodoc ?? this.autodoc,
       imports: imports,
       generateEnum: generateEnum ?? this.generateEnum,
       rawMap: rawMap,
@@ -222,63 +232,69 @@ class RawConfig {
   }
 
   void printConfig() {
-    print(' -> fileType: ${fileType.name}');
-    print(' -> baseLocale: ${baseLocale.languageTag}');
-    print(' -> fallbackStrategy: ${fallbackStrategy.name}');
-    print(' -> inputDirectory: ${inputDirectory ?? 'null (everywhere)'}');
-    print(' -> inputFilePattern: $inputFilePattern');
-    print(
+    log.verbose(' -> fileType: ${fileType.name}');
+    log.verbose(' -> baseLocale: ${baseLocale.languageTag}');
+    log.verbose(' -> fallbackStrategy: ${fallbackStrategy.name}');
+    log.verbose(' -> inputDirectory: ${inputDirectory ?? 'null (everywhere)'}');
+    log.verbose(' -> inputFilePattern: $inputFilePattern');
+    log.verbose(
         ' -> outputDirectory: ${outputDirectory ?? 'null (directory of input)'}');
-    print(' -> outputFileName: $outputFileName');
-    print(' -> lazy: $lazy');
-    print(' -> localeHandling: $localeHandling');
-    print(' -> flutterIntegration: $flutterIntegration');
-    print(' -> namespaces: $namespaces');
-    print(' -> translateVar: $translateVar');
-    print(' -> enumName: $enumName');
-    print(' -> translationClassVisibility: ${translationClassVisibility.name}');
-    print(
+    log.verbose(' -> outputFileName: $outputFileName');
+    log.verbose(' -> lazy: $lazy');
+    log.verbose(' -> localeHandling: $localeHandling');
+    log.verbose(' -> flutterIntegration: $flutterIntegration');
+    log.verbose(' -> namespaces: $namespaces');
+    log.verbose(' -> translateVar: $translateVar');
+    log.verbose(' -> enumName: $enumName');
+    log.verbose(
+        ' -> translationClassVisibility: ${translationClassVisibility.name}');
+    log.verbose(
         ' -> keyCase: ${keyCase != null ? keyCase?.name : 'null (no change)'}');
-    print(
+    log.verbose(
         ' -> keyCase (for maps): ${keyMapCase != null ? keyMapCase?.name : 'null (no change)'}');
-    print(
+    log.verbose(
         ' -> paramCase: ${paramCase != null ? paramCase?.name : 'null (no change)'}');
-    print(
+    log.verbose(
         ' -> sanitization: ${sanitization.enabled ? 'enabled' : 'disabled'} / \'${sanitization.prefix}\' / caseStyle: ${sanitization.caseStyle}');
-    print(' -> stringInterpolation: ${stringInterpolation.name}');
-    print(' -> renderFlatMap: $renderFlatMap');
-    print(' -> translationOverrides: $translationOverrides');
-    print(' -> renderTimestamp: $renderTimestamp');
-    print(' -> renderStatistics: $renderStatistics');
-    print(' -> maps: $maps');
-    print(' -> pluralization/auto: ${pluralAuto.name}');
-    print(' -> pluralization/default_parameter: $pluralParameter');
-    print(' -> pluralization/cardinal: $pluralCardinal');
-    print(' -> pluralization/ordinal: $pluralOrdinal');
-    print(' -> contexts: ${contexts.isEmpty ? 'no custom contexts' : ''}');
+    log.verbose(' -> stringInterpolation: ${stringInterpolation.name}');
+    log.verbose(' -> renderFlatMap: $renderFlatMap');
+    log.verbose(' -> translationOverrides: $translationOverrides');
+    log.verbose(' -> renderTimestamp: $renderTimestamp');
+    log.verbose(' -> renderStatistics: $renderStatistics');
+    log.verbose(' -> maps: $maps');
+    log.verbose(' -> pluralization/auto: ${pluralAuto.name}');
+    log.verbose(' -> pluralization/default_parameter: $pluralParameter');
+    log.verbose(' -> pluralization/cardinal: $pluralCardinal');
+    log.verbose(' -> pluralization/ordinal: $pluralOrdinal');
+    log.verbose(
+        ' -> contexts: ${contexts.isEmpty ? 'no custom contexts' : ''}');
     for (final contextType in contexts) {
-      print('    - ${contextType.enumName}');
+      log.verbose('    - ${contextType.enumName}');
     }
-    print(' -> interfaces: ${interfaces.isEmpty ? 'no interfaces' : ''}');
+    log.verbose(' -> interfaces: ${interfaces.isEmpty ? 'no interfaces' : ''}');
     for (final interface in interfaces) {
-      print('    - ${interface.name}');
-      print(
+      log.verbose('    - ${interface.name}');
+      log.verbose(
           '        Attributes: ${interface.attributes.isEmpty ? 'no attributes' : ''}');
       for (final a in interface.attributes) {
-        print(
+        log.verbose(
             '          - ${a.returnType} ${a.attributeName} (${a.parameters.isEmpty ? 'no parameters' : a.parameters.map((p) => p.parameterName).join(',')})${a.optional ? ' (optional)' : ''}');
       }
-      print('        Paths: ${interface.paths.isEmpty ? 'no paths' : ''}');
+      log.verbose(
+          '        Paths: ${interface.paths.isEmpty ? 'no paths' : ''}');
       for (final path in interface.paths) {
-        print(
+        log.verbose(
             '          - ${path.isContainer ? 'children of: ' : ''}${path.path}');
       }
     }
-    print(' -> obfuscation: ${obfuscation.enabled ? 'enabled' : 'disabled'}');
-    print(
+    log.verbose(
+        ' -> obfuscation: ${obfuscation.enabled ? 'enabled' : 'disabled'}');
+    log.verbose(
         ' -> format: ${format.enabled ? 'enabled (width=${format.width})' : 'disabled'}');
-    print(' -> imports: $imports');
-    print(' -> generateEnum: $generateEnum');
+    log.verbose(
+        ' -> autodoc: ${autodoc.enabled ? 'enabled (${autodoc.locales.join(', ')})' : 'disabled'}');
+    log.verbose(' -> imports: $imports');
+    log.verbose(' -> generateEnum: $generateEnum');
   }
 
   static final defaultLocale =
@@ -316,6 +332,7 @@ class RawConfig {
     interfaces: RawConfig.defaultInterfaces,
     obfuscation: RawConfig.defaultObfuscationConfig,
     format: RawConfig.defaultFormatConfig,
+    autodoc: RawConfig.defaultAutodocConfig,
     imports: RawConfig.defaultImports,
     className: RawConfig.defaultClassName,
     generateEnum: RawConfig.defaultGenerateEnum,

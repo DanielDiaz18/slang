@@ -3,6 +3,7 @@
 ///
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
+// dart format off
 
 part of 'strings.g.dart';
 
@@ -54,18 +55,31 @@ class TranslationsMainScreenEn {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'An English Title'
 	String get title => 'An English Title';
+
+	/// en: '(one) {You pressed $n time.} (other) {You pressed $n times.}'
 	String counter({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
 		one: 'You pressed ${n} time.',
 		other: 'You pressed ${n} times.',
 	);
+
+	/// en: 'Tap me'
 	String get tapMe => 'Tap me';
 }
 
-/// Flat map(s) containing all translations.
+/// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
+///
+/// The Dart AOT compiler has issues with very large switch statements,
+/// so the map is split into smaller functions (512 entries each).
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
+		return _flatMapFunction$0(path);
+	}
+
+	dynamic _flatMapFunction$0(String path) {
 		switch (path) {
 			case 'mainScreen.title': return 'An English Title';
 			case 'mainScreen.counter': return ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,

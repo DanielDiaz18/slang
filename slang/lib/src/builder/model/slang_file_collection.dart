@@ -3,6 +3,7 @@ import 'package:slang/src/builder/model/enums.dart';
 import 'package:slang/src/builder/model/i18n_locale.dart';
 import 'package:slang/src/builder/model/raw_config.dart';
 import 'package:slang/src/builder/utils/path_utils.dart';
+import 'package:slang/src/utils/log.dart' as log;
 
 /// A collection of translation files that can be read in a later step.
 /// This is an abstraction to support build_runner and the custom CLI by
@@ -51,8 +52,6 @@ class SlangFileCollection {
 }
 
 class TranslationFile extends PlainTranslationFile {
-  static const DEFAULT_NAMESPACE = r'$default$';
-
   /// The inferred locale of this file (by file name, directory name, or config)
   final I18nLocale locale;
 
@@ -83,7 +82,7 @@ class PlainTranslationFile {
       final content = await read();
       return BaseDecoder.decodeWithFileType(fileType, content);
     } on FormatException catch (e) {
-      print('');
+      log.verbose('');
       throw 'File: $path\n$e';
     }
   }

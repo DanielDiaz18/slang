@@ -17,6 +17,7 @@ import 'package:slang/src/runner/migrate.dart';
 import 'package:slang/src/runner/normalize.dart';
 import 'package:slang/src/runner/stats.dart';
 import 'package:slang/src/runner/utils/format.dart';
+import 'package:slang/src/utils/log.dart' as log;
 import 'package:watcher/watcher.dart';
 
 /// Determines what the runner will do
@@ -42,7 +43,8 @@ enum RunnerMode {
 /// This is usually faster than the build_runner implementation.
 void main(List<String> arguments) async {
   final RunnerMode mode;
-  final bool verbose;
+  log.Level logLevel = log.Level.normal;
+
   if (arguments.isNotEmpty) {
     if (const {'-h', '--help', 'help'}.contains(arguments[0])) {
       printHelp();
@@ -87,29 +89,33 @@ void main(List<String> arguments) async {
         mode = RunnerMode.generate;
     }
 
-    verbose = mode == RunnerMode.generate ||
-        mode == RunnerMode.watch ||
-        (arguments.length == 2 &&
-            (arguments[1] == '-v' || arguments[1] == '--verbose'));
+    for (final arg in arguments) {
+      if (arg == '-v' || arg == '--verbose') {
+        logLevel = log.Level.verbose;
+      }
+    }
   } else {
     mode = RunnerMode.generate;
-    verbose = true;
   }
+
+  log.setLevel(logLevel);
+
+  final verbose = logLevel == log.Level.verbose;
 
   switch (mode) {
     case RunnerMode.generate:
     case RunnerMode.watch:
-      print('Generating translations...\n');
+      log.info('Generating translations...\n');
       break;
     case RunnerMode.configure:
-      print('Configuring...\n');
+      log.info('Configuring...\n');
       break;
     case RunnerMode.stats:
     case RunnerMode.analyze:
-      print('Scanning translations...\n');
+      log.info('Scanning translations...\n');
       break;
     case RunnerMode.apply:
-      print('Applying translations...\n');
+      log.info('Applying translations...\n');
       break;
     case RunnerMode.migrate:
       break;
@@ -118,13 +124,13 @@ void main(List<String> arguments) async {
     case RunnerMode.outdated:
       break;
     case RunnerMode.add:
-      print('Adding translation...');
+      log.info('Adding translation...');
       break;
     case RunnerMode.clean:
-      print('Removing unused translations...\n');
+      log.info('Removing unused translations...\n');
       break;
     case RunnerMode.normalize:
-      print('Normalizing translations...\n');
+      log.info('Normalizing translations...\n');
       break;
   }
 
@@ -150,7 +156,10 @@ void main(List<String> arguments) async {
       await watchTranslations(fileCollection.config);
       break;
     case RunnerMode.configure:
-      runConfigure(fileCollection);
+      runConfigure(
+        fileCollection,
+        arguments: filteredArguments,
+      );
       break;
     case RunnerMode.generate:
     case RunnerMode.stats:
@@ -158,7 +167,6 @@ void main(List<String> arguments) async {
       await generateTranslations(
         mode: mode,
         fileCollection: fileCollection,
-        verbose: verbose,
         stopwatch: stopwatch,
         arguments: filteredArguments,
       );
@@ -202,14 +210,14 @@ void main(List<String> arguments) async {
 Future<void> watchTranslations(RawConfig config) async {
   final inputDirectoryPath = config.inputDirectory;
   if (inputDirectoryPath == null) {
-    print('Please set input_directory in build.yaml or slang.yaml.');
+    log.error('Please set input_directory in build.yaml or slang.yaml.');
     return;
   }
 
   final inputDirectory = Directory(inputDirectoryPath);
   final stream = Watcher(inputDirectoryPath).events;
 
-  print('Listening to changes in $inputDirectoryPath');
+  log.info('Listening to changes in $inputDirectoryPath');
   _generateTranslationsFromWatch(
     config: config,
     inputDirectory: inputDirectory,
@@ -237,7 +245,7 @@ Future<void> _generateTranslationsFromWatch({
   required String fileName,
 }) async {
   final stopwatch = Stopwatch()..start();
-  _printDynamicLastLine('\r[$currentTime] $_YELLOW#$counter Generating...');
+  _printDynamicLastLine('\r[$currentTime] $_yellow#$counter Generating...');
 
   final newFiles = inputDirectory
       .listSync(recursive: true)
@@ -257,24 +265,22 @@ Future<void> _generateTranslationsFromWatch({
         config: config,
         files: newFiles,
       ),
-      verbose: false,
     );
   } catch (e) {
     success = false;
-    print('');
-    print(e);
+    log.error('\n${e.toString()}');
     _printDynamicLastLine(
-      '\r[$currentTime] $_RED#$counter Error ${stopwatch.elapsedSeconds}',
+      '\r[$currentTime] $_red#$counter Error ${stopwatch.elapsedSeconds}',
     );
   }
 
   if (success) {
     if (counter == 1) {
       _printDynamicLastLine(
-          '\r[$currentTime] $_GREEN#1 Init ${stopwatch.elapsedSeconds}');
+          '\r[$currentTime] $_green#1 Init ${stopwatch.elapsedSeconds}');
     } else {
       _printDynamicLastLine(
-        '\r[$currentTime] $_GREEN#$counter Update $fileName ${stopwatch.elapsedSeconds}',
+        '\r[$currentTime] $_green#$counter Update $fileName ${stopwatch.elapsedSeconds}',
       );
     }
   }
@@ -285,12 +291,11 @@ Future<void> _generateTranslationsFromWatch({
 Future<void> generateTranslations({
   required RunnerMode mode,
   required SlangFileCollection fileCollection,
-  required bool verbose,
   Stopwatch? stopwatch,
   List<String>? arguments,
 }) async {
   if (fileCollection.files.isEmpty) {
-    print('No translation file found.');
+    log.error('No translation file found.');
     return;
   }
 
@@ -298,14 +303,10 @@ Future<void> generateTranslations({
   final outputFilePath = fileCollection.determineOutputPath();
 
   // STEP 2: scan translations
-  if (verbose) {
-    print('Scanning translations...');
-    print('');
-  }
+  log.verbose('Scanning translations...\n');
 
   final translationMap = await TranslationMapBuilder.build(
     fileCollection: fileCollection,
-    verbose: verbose,
   );
 
   if (mode == RunnerMode.stats) {
@@ -314,8 +315,7 @@ Future<void> generateTranslations({
       translationMap: translationMap,
     ).printResult();
     if (stopwatch != null) {
-      print('');
-      print('Scan done. (${stopwatch.elapsed})');
+      log.info('\nScan done. (${stopwatch.elapsed})');
     }
     return; // skip generation
   } else if (mode == RunnerMode.analyze) {
@@ -325,7 +325,7 @@ Future<void> generateTranslations({
       arguments: arguments ?? [],
     );
     if (stopwatch != null) {
-      print('Analysis done. ${stopwatch.elapsedSeconds}');
+      log.info('Analysis done. ${stopwatch.elapsedSeconds}');
     }
     return; // skip generation
   }
@@ -356,12 +356,11 @@ Future<void> generateTranslations({
     );
   }
 
-  if (verbose) {
-    print('');
-    print('Output:');
-    print(' -> $outputFilePath');
+  if (log.level == log.Level.verbose) {
+    log.verbose('\nOutput:');
+    log.verbose(' -> $outputFilePath');
     for (final locale in result.translations.keys) {
-      print(' -> ${BuildResultPaths.localePath(
+      log.verbose(' -> ${BuildResultPaths.localePath(
         outputPath: outputFilePath,
         locale: locale,
       )}');
@@ -371,9 +370,8 @@ Future<void> generateTranslations({
   if (fileCollection.config.format.enabled) {
     final formatDir = PathUtils.getParentPath(outputFilePath)!;
     Stopwatch? formatStopwatch;
-    if (verbose) {
-      print('');
-      print('Formatting "$formatDir" ...');
+    if (log.level == log.Level.verbose) {
+      log.verbose('\nFormatting "$formatDir" ...');
       if (stopwatch != null) {
         formatStopwatch = Stopwatch()..start();
       }
@@ -382,15 +380,17 @@ Future<void> generateTranslations({
       dir: formatDir,
       width: fileCollection.config.format.width,
     );
-    if (verbose && formatStopwatch != null) {
-      print('Format done. ${formatStopwatch.elapsedSeconds}');
+    if (formatStopwatch != null) {
+      log.verbose('Format done. ${formatStopwatch.elapsedSeconds}');
     }
   }
 
-  if (verbose && stopwatch != null) {
-    print('');
-    print(
-        '${_GREEN}Translations generated successfully. ${stopwatch.elapsedSeconds}$_RESET');
+  if (stopwatch != null) {
+    if (log.level == log.Level.verbose) {
+      log.verbose('');
+    }
+    log.info(
+        '${_green}Translations generated successfully. ${stopwatch.elapsedSeconds}$_reset');
   }
 }
 
@@ -411,17 +411,17 @@ String? _lastPrint;
 
 void _printDynamicLastLine(String output) {
   if (_lastPrint == null) {
-    stdout.write('\r$output$_RESET');
+    stdout.write('\r$output$_reset');
   } else {
-    stdout.write('\r${output.padRight(_lastPrint!.length, ' ')}$_RESET');
+    stdout.write('\r${output.padRight(_lastPrint!.length, ' ')}$_reset');
   }
   _lastPrint = output;
 }
 
-const _GREEN = '\x1B[32m';
-const _YELLOW = '\x1B[33m';
-const _RED = '\x1B[31m';
-const _RESET = '\x1B[0m';
+const _green = '\x1B[32m';
+const _yellow = '\x1B[33m';
+const _red = '\x1B[31m';
+const _reset = '\x1B[0m';
 
 extension on Stopwatch {
   String get elapsedSeconds {

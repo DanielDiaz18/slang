@@ -3,6 +3,7 @@
 ///
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
+// dart format off
 
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
@@ -59,10 +60,17 @@ class _TranslationsMainScreenDe implements TranslationsMainScreenEn {
 	@override String get tapMe => 'Drück mich';
 }
 
-/// Flat map(s) containing all translations.
+/// The flat map containing all translations for locale <de>.
 /// Only for edge cases! For simple maps, use the map function of this library.
+///
+/// The Dart AOT compiler has issues with very large switch statements,
+/// so the map is split into smaller functions (512 entries each).
 extension on TranslationsDe {
 	dynamic _flatMapFunction(String path) {
+		return _flatMapFunction$0(path);
+	}
+
+	dynamic _flatMapFunction$0(String path) {
 		switch (path) {
 			case 'mainScreen.title': return 'Ein deutscher Titel';
 			case 'mainScreen.counter': return ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('de'))(n,

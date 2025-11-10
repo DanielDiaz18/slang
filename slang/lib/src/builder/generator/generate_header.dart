@@ -120,11 +120,12 @@ void _generateHeaderComment({
 /// To regenerate, run: `dart run slang`$statisticsStr$timestampStr
 
 // coverage:ignore-file
-// ignore_for_file: type=lint, unused_import''');
+// ignore_for_file: type=lint, unused_import
+${!config.format.enabled ? '// dart format off' : ''}
+''');
 }
 
 void _generateImports(GenerateConfig config, StringBuffer buffer) {
-  buffer.writeln();
   final imports = [
     ...config.imports,
     'package:intl/intl.dart',

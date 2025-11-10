@@ -8,6 +8,9 @@
 
 Type-safe i18n solution using JSON, YAML, CSV, or ARB files.
 
+#### Powered by
+[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSource)
+
 ## About this library
 
 - 🚀 Minimal setup, create JSON files and get started! No configuration needed.
@@ -81,6 +84,7 @@ dart run slang migrate arb src.arb dest.json # migrate arb to json
   - [Fallback](#-fallback)
   - [Lazy Loading](#-lazy-loading)
   - [Comments](#-comments)
+  - [Auto Generated Comments](#-auto-generated-comments)
   - [Recasing](#-recasing)
   - [Sanitization](#-sanitization)
   - [Obfuscation](#-obfuscation)
@@ -351,6 +355,11 @@ obfuscation:
 format:
   enabled: true
   width: 150
+autodoc:
+  enabled: true
+  locales:
+    - en
+    - fr
 imports:
   - 'package:my_package/path_to_enum.dart'
 generate_enum: true
@@ -425,6 +434,11 @@ targets:
           format:
             enabled: true
             width: 150
+          autodoc:
+            enabled: true
+            locales:
+              - en
+              - fr
           imports:
             - 'package:my_package/path_to_enum.dart'
           generate_enum: true
@@ -432,47 +446,49 @@ targets:
 
 </details>
 
-| Key                                 | Type                                              | Usage                                                        | Default        |
-|-------------------------------------|---------------------------------------------------|--------------------------------------------------------------|----------------|
-| `base_locale`                       | `String`                                          | locale of default json                                       | `en`           |
-| `fallback_strategy`                 | `none`, `base_locale`, `base_locale_empty_string` | handle missing translations [(i)](#-fallback)                | `none`         |
-| `input_directory`                   | `String`                                          | path to input directory                                      | `null`         |
-| `input_file_pattern`                | `String`                                          | input file pattern, must end with .json, .yaml, .csv, .arb   | `.i18n.json`   |
-| `output_directory`                  | `String`                                          | path to output directory                                     | `null`         |
-| `output_file_name`                  | `String`                                          | output file name                                             | `null`         |
-| `lazy`                              | `Boolean`                                         | load translations lazily [(i)](#-lazy-loading)               | `true`         |
-| `locale_handling`                   | `Boolean`                                         | generate locale handling logic [(i)](#-dependency-injection) | `true`         |
-| `flutter_integration`               | `Boolean`                                         | generate flutter features [(i)](#-dart-only)                 | `true`         |
-| `namespaces`                        | `Boolean`                                         | split input files [(i)](#-namespaces)                        | `false`        |
-| `translate_var`                     | `String`                                          | translate variable name                                      | `t`            |
-| `enum_name`                         | `String`                                          | enum name                                                    | `AppLocale`    |
-| `class_name`                        | `String`                                          | name of the translations class                               | `Translations` |
-| `translation_class_visibility`      | `private`, `public`                               | class visibility                                             | `private`      |
-| `key_case`                          | `null`, `camel`, `pascal`, `snake`                | transform keys (optional) [(i)](#-recasing)                  | `null`         |
-| `key_map_case`                      | `null`, `camel`, `pascal`, `snake`                | transform keys for maps (optional) [(i)](#-recasing)         | `null`         |
-| `param_case`                        | `null`, `camel`, `pascal`, `snake`                | transform parameters (optional) [(i)](#-recasing)            | `null`         |
-| `sanitization`/`enabled`            | `Boolean`                                         | enable sanitization [(i)](#-sanitization)                    | `true`         |
-| `sanitization`/`prefix`             | `String`                                          | prefix for sanitization [(i)](#-sanitization)                | `k`            |
-| `sanitization`/`case`               | `null`, `camel`, `pascal`, `snake`                | case style for sanitization [(i)](#-sanitization)            | `camel`        |
-| `string_interpolation`              | `dart`, `braces`, `double_braces`                 | string interpolation mode [(i)](#-string-interpolation)      | `dart`         |
-| `flat_map`                          | `Boolean`                                         | generate flat map [(i)](#-dynamic-keys--flat-map)            | `true`         |
-| `translation_overrides`             | `Boolean`                                         | enable translation overrides [(i)](#-translation-overrides)  | `false`        |
-| `timestamp`                         | `Boolean`                                         | write "Built on" timestamp                                   | `true`         |
-| `statistics`                        | `Boolean`                                         | write statistics (locale and string count)                   | `true`         |
-| `maps`                              | `List<String>`                                    | entries which should be accessed via keys [(i)](#-maps)      | `[]`           |
-| `pluralization`/`auto`              | `off`, `cardinal`, `ordinal`                      | detect plurals automatically [(i)](#-pluralization)          | `cardinal`     |
-| `pluralization`/`default_parameter` | `String`                                          | default plural parameter [(i)](#-pluralization)              | `n`            |
-| `pluralization`/`cardinal`          | `List<String>`                                    | entries which have cardinals                                 | `[]`           |
-| `pluralization`/`ordinal`           | `List<String>`                                    | entries which have ordinals                                  | `[]`           |
-| `<context>`/`default_parameter`     | `String`                                          | default parameter name [(i)](#-custom-contexts--enums)       | `context`      |
-| `<context>`/`generate_enum`         | `Boolean`                                         | generate enum [(i)](#-custom-contexts--enums)                | `true`         |
-| `children of interfaces`            | `Pairs of Alias:Path`                             | alias interfaces [(i)](#-interfaces)                         | `null`         |
-| `obfuscation`/`enabled`             | `Boolean`                                         | enable obfuscation [(i)](#-obfuscation)                      | `false`        |
-| `obfuscation`/`secret`              | `String`                                          | obfuscation secret (random if null) [(i)](#-obfuscation)     | `null`         |
-| `format`/`enabled`                  | `Boolean`                                         | enable auto format [(i)](#-formatting)                       | `false`        |
-| `format`/`width`                    | `String`                                          | set line length / characters per line [(i)](#-formatting)    | `null`         |
-| `imports`                           | `List<String>`                                    | generate import statements                                   | `[]`           |
-| `generate_enum`                     | `Boolean`                                         | global `generate_enum` [(i)](#-custom-contexts--enums)       | `true`         |
+| Key                                    | Type                                              | Usage                                                        | Default        |
+|----------------------------------------|---------------------------------------------------|--------------------------------------------------------------|----------------|
+| `base_locale`                          | `String`                                          | locale of default json                                       | `en`           |
+| `fallback_strategy`                    | `none`, `base_locale`, `base_locale_empty_string` | handle missing translations [(i)](#-fallback)                | `none`         |
+| `input_directory`                      | `String`                                          | path to input directory                                      | `null`         |
+| `input_file_pattern`                   | `String`                                          | input file pattern, must end with .json, .yaml, .csv, .arb   | `.i18n.json`   |
+| `output_directory`                     | `String`                                          | path to output directory                                     | `null`         |
+| `output_file_name`                     | `String`                                          | output file name                                             | `null`         |
+| `lazy`                                 | `Boolean`                                         | load translations lazily [(i)](#-lazy-loading)               | `true`         |
+| `locale_handling`                      | `Boolean`                                         | generate locale handling logic [(i)](#-dependency-injection) | `true`         |
+| `flutter_integration`                  | `Boolean`                                         | generate flutter features [(i)](#-dart-only)                 | `true`         |
+| `namespaces`                           | `Boolean`                                         | split input files [(i)](#-namespaces)                        | `false`        |
+| `translate_var`                        | `String`                                          | translate variable name                                      | `t`            |
+| `enum_name`                            | `String`                                          | enum name                                                    | `AppLocale`    |
+| `class_name`                           | `String`                                          | name of the translations class                               | `Translations` |
+| `translation_class_visibility`         | `private`, `public`                               | class visibility                                             | `private`      |
+| `key_case`                             | `null`, `camel`, `pascal`, `snake`                | transform keys (optional) [(i)](#-recasing)                  | `null`         |
+| `key_map_case`                         | `null`, `camel`, `pascal`, `snake`                | transform keys for maps (optional) [(i)](#-recasing)         | `null`         |
+| `param_case`                           | `null`, `camel`, `pascal`, `snake`                | transform parameters (optional) [(i)](#-recasing)            | `null`         |
+| `sanitization.enabled`                 | `Boolean`                                         | enable sanitization [(i)](#-sanitization)                    | `true`         |
+| `sanitization.prefix`                  | `String`                                          | prefix for sanitization [(i)](#-sanitization)                | `k`            |
+| `sanitization.case`                    | `null`, `camel`, `pascal`, `snake`                | case style for sanitization [(i)](#-sanitization)            | `camel`        |
+| `string_interpolation`                 | `dart`, `braces`, `double_braces`                 | string interpolation mode [(i)](#-string-interpolation)      | `dart`         |
+| `flat_map`                             | `Boolean`                                         | generate flat map [(i)](#-dynamic-keys--flat-map)            | `true`         |
+| `translation_overrides`                | `Boolean`                                         | enable translation overrides [(i)](#-translation-overrides)  | `false`        |
+| `timestamp`                            | `Boolean`                                         | write "Built on" timestamp                                   | `true`         |
+| `statistics`                           | `Boolean`                                         | write statistics (locale and string count)                   | `true`         |
+| `maps`                                 | `List<String>`                                    | entries which should be accessed via keys [(i)](#-maps)      | `[]`           |
+| `pluralization.auto`                   | `off`, `cardinal`, `ordinal`                      | detect plurals automatically [(i)](#-pluralization)          | `cardinal`     |
+| `pluralization.default_parameter`      | `String`                                          | default plural parameter [(i)](#-pluralization)              | `n`            |
+| `pluralization.cardinal`               | `List<String>`                                    | entries which have cardinals                                 | `[]`           |
+| `pluralization.ordinal`                | `List<String>`                                    | entries which have ordinals                                  | `[]`           |
+| `contexts.<context>.default_parameter` | `String`                                          | default parameter name [(i)](#-custom-contexts--enums)       | `context`      |
+| `contexts.<context>.generate_enum`     | `Boolean`                                         | generate enum [(i)](#-custom-contexts--enums)                | `true`         |
+| `children of interfaces`               | `Pairs of Alias:Path`                             | alias interfaces [(i)](#-interfaces)                         | `null`         |
+| `obfuscation.enabled`                  | `Boolean`                                         | enable obfuscation [(i)](#-obfuscation)                      | `false`        |
+| `obfuscation.secret`                   | `String`                                          | obfuscation secret (random if null) [(i)](#-obfuscation)     | `null`         |
+| `format.enabled`                       | `Boolean`                                         | enable auto format [(i)](#-formatting)                       | `false`        |
+| `format.width`                         | `String`                                          | set line length / characters per line [(i)](#-formatting)    | `null`         |
+| `autodoc.enabled`                      | `Boolean`                                         | enable autodoc [(i)](#-auto-generated-comments)              | `true`         |
+| `autodoc.locales`                      | `List<String>`                                    | list of locales to generate [(i)](#-auto-generated-comments) | `$BASE$`       |
+| `imports`                              | `List<String>`                                    | generate import statements                                   | `[]`           |
+| `generate_enum`                        | `Boolean`                                         | global `generate_enum` [(i)](#-custom-contexts--enums)       | `true`         |
 
 ## Main Features
 
@@ -1186,6 +1202,7 @@ A few remarks:
 2. Overriding a second time reverts the last override.
 3. New translations will be parsed but have no effect.
 4. New parameters stay unparsed. (i.e. `{name}` stays `{name}`)
+5. Obfuscation by Dart/Flutter will break translations with parameters as there is no reflection.
 
 If you use dependency injection, then you can create a new overridden instance using `AppLocaleUtils`:
 
@@ -1284,7 +1301,7 @@ i18n/
       └── error_dialogs.i18n.json <-- directory locale will be used
 ```
 
-If you use directory locales, then you may use underscores as namespace.
+If you use directory locales, then you may use underscores as namespace, but it is recommended to use camel case.
 
 Now access the translations:
 
@@ -1292,6 +1309,22 @@ Now access the translations:
 // t.<namespace>.<path>
 String a = t.widgets.welcomeCard.title;
 String b = t.errorDialogs.login.wrongPassword;
+```
+
+To put translations into the root namespace, use the `_default` namespace.
+This allows you to combine namespaced and non-namespaced translations.
+
+```text
+i18n/
+ └── _default_en.i18n.json
+ └── _default_fr.i18n.json
+ └── widgets_en.i18n.json
+ └── widgets_fr.i18n.json
+```
+
+```dart
+String a = t.appName; // from _default namespace
+String b = t.widgets.welcomeCard.title; // from widgets namespace
 ```
 
 ### ➤ Compact CSV
@@ -1443,6 +1476,28 @@ mainScreen.content,,Content,Inhalt,
 ```dart
 /// The submit button shown at the bottom
 String get button => 'Submit';
+```
+
+### ➤ Auto Generated Comments
+
+Besides the custom comments you provide, Slang will also generate comments (documentation) for you.
+
+By default, the translation of the base locale is added.
+
+```dart
+/// en: 'An English Title'
+String get title => 'An English Title';
+```
+
+You can configure this feature under `autodoc`.
+
+```yaml
+# Config
+autodoc:
+  enabled: true # enable this feature
+  locales: # only generate these locales
+    - en 
+    - de
 ```
 
 ### ➤ Recasing
@@ -1597,7 +1652,17 @@ If you have many locales, it might be frustrating to keep `CFBundleLocalizations
 This command will care about all configuration files for you.
 
 ```sh
-dart run slang configure
+dart run slang configure [--source-dirs=dir1,dir2]
+```
+
+| Argument              | Usage                                                      |
+|-----------------------|------------------------------------------------------------|
+| `--source-dirs=<dirs>`| Comma-separated list of source directories to search in    |
+
+You can also specify additional arguments, for example to set the source directories:
+
+```sh
+dart run slang configure --source-dirs=dir1,dir2
 ```
 
 ### ➤ Analyze Translations
@@ -1607,17 +1672,18 @@ You can use the slang analyzer to find missing and unused translations.
 Missing translations only occur when `fallback_strategy: base_locale` is used.
 
 ```sh
-dart run slang analyze [--split] [--full] [--outdir=assets/i18n]
+dart run slang analyze [--split] [--full] [--outdir=assets/i18n] [--source-dirs=lib,packages]
 ```
 
-| Argument            | Usage                                                  |
-|---------------------|--------------------------------------------------------|
-| `--split`           | Split analysis for each locale                         |
-| `--split-missing`   | Split missing translations for each locale             |
-| `--split-unused`    | Split unused translations for each locale              |
-| `--full`            | Find unused translations in whole source code          |
-| `--outdir=<dir>`    | Path of analysis output (`input_directory` by default) |
-| `--exit-if-changed` | Exit with code 1 if there are changes (for CI)         |
+| Argument               | Usage                                                                 |
+|------------------------|-----------------------------------------------------------------------|
+| `--split`              | Split analysis for each locale                                        |
+| `--split-missing`      | Split missing translations for each locale                            |
+| `--split-unused`       | Split unused translations for each locale                             |
+| `--full`               | Find unused translations in whole source code                         |
+| `--outdir=<dir>`       | Path of analysis output (`input_directory` by default)                |
+| `--exit-if-changed`    | Exit with code 1 if there are changes (for CI)                        |
+| `--source-dirs=<dirs>` | Comma-separated list of source directories (default: `lib`)           |
 
 Result file:
 
@@ -2128,6 +2194,7 @@ Feel free to extend this list :)
 Open source:
 
 - [LocalSend (file sharing app)](https://github.com/localsend/localsend)
+- [NordVPN Linux Client](https://github.com/NordSecurity/nordvpn-linux)
 - [ReVanced](https://github.com/ReVanced/revanced-manager)
 - [Hiddify](https://github.com/hiddify/hiddify-next)
 - [Saber (notes app)](https://github.com/adil192/saber)
